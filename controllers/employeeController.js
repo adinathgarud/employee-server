@@ -3,7 +3,7 @@ import Employee from "../models/Employee.js";
 import User from "../models/User.js";
 import multer from 'multer';
 import path from 'path';
-import Department from "../models/Department.js"
+import Department from "../models/Department.js";
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -17,7 +17,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Function to add a new employee
 const addEmployee = async (req, res) => {
     try {
         const {
@@ -32,20 +31,36 @@ const addEmployee = async (req, res) => {
             salary,
             password,
             role,
-            
         } = req.body;
 
-        // Check if the user already exists
-        // const user = await User.findOne({email});
-        // if (user) {
-        //     return res.status(400).json({ success: false, error: "User  already registered as an employee." });
-        // }
+        // Validate required fields
+        if (!name || !email || !employeeId || !dob || !designation || !department || !salary || !password) {
+            return res.status(400).json({ success: false, error: "All fields are required." });
+        }
+
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ success: false, error: "Email already exists." });
+        }
+
+        // Check if employee ID already exists
+        const existingEmployee = await Employee.findOne({ employeeId });
+        if (existingEmployee) {
+            return res.status(400).json({ success: false, error: "Employee ID already exists." });
+        }
+
+        // Validate department
+        const dept = await Department.findOne({ name: department });
+        if (!dept) {
+            return res.status(400).json({ success: false, error: "Invalid department." });
+        }
 
         // Hash the password
         const hashPassword = await bcrypt.hash(password, 10);
 
-        // Create a new user
-        const newUser  = new User({
+        // Create new user
+        const newUser = new User({
             name,
             email,
             password: hashPassword,
@@ -53,10 +68,11 @@ const addEmployee = async (req, res) => {
             profileImage: req.file ? req.file.filename : ""
         });
 
-        // Save the user to the database
-        const savedUser  = await newUser.save();
+        const savedUser = await newUser.save().catch(err => {
+            return res.status(500).json({ success: false, error: "Failed to save user." });
+        });
 
-        // Create a new employee
+        // Create new employee
         const newEmployee = new Employee({
             userId: savedUser._id,
             employeeId,
@@ -68,13 +84,13 @@ const addEmployee = async (req, res) => {
             salary
         });
 
-        // Save the employee to the database
-        await newEmployee.save();
+        await newEmployee.save().catch(err => {
+            return res.status(500).json({ success: false, error: "Failed to save employee." });
+        });
 
-        // Respond with success message
         return res.status(200).json({ success: true, message: "Employee created successfully." });
     } catch (error) {
-        console.error(error.message); // Log the error for debugging
+        console.error(error.message);
         return res.status(500).json({ success: false, error: "Server error in adding employee." });
     }
 };

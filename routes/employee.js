@@ -5,7 +5,7 @@ import { addEmployee, upload, getEmployees, getEmployee, updateEmployee, fetchEm
 const router = express.Router()
 
 router.get('/', getEmployees)
-router.post('/add', upload.single('image'), addEmployee)
+router.post('/add', upload.single('profileImage'), addEmployee)
 router.get('/:id', getEmployee)
 router.put('/:id', updateEmployee)
 router.get('/department/:id', fetchEmployeeByDepId)

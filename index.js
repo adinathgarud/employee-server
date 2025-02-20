@@ -11,7 +11,12 @@ import dashboardRouter from './routes/dashboard.js'
 
 connectToDatabase()
 const app = express()
-app.use(cors())
+app.use(cors(
+    {
+        origin: ["https://employee-frontend-ochre.vercel.app"],
+        credentials:true
+    }
+))
 app.use(express.json())
 app.use(express.static('public/uploads'))
 app.use('/api/auth',authRouter)
